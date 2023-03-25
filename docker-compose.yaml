@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  app:
+    build:
+      dockerfile: docker/app.Dockerfile
+      context: .
+    container_name: my_crawler
+    env_file:
+      - ./.env
+    depends_on:
+     - database
+     - alembic
+    volumes:
+      - ./app:/src/app:rw
+      - ./expamles:/src/expamles:rw
+    ports:
+      - 8000:8000
+    command: python3 ./app/main.py
+
+  alembic:
+    build:
+      dockerfile: docker/alembic.Dockerfile
+      context: .
+    depends_on:
+      - database
+    env_file:
+      - ./.env
+    volumes:
+      - ./migrations:/migrations
+    command: ["alembic", "upgrade", "head"]
+
+  database:
+    container_name: crawler_db
+    image: postgres:14.2
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - 5432:${POSTGRES_PORT}
